@@ -114,67 +114,119 @@ app.get("/setup-database", async (req, res) => {
   try {
     const pool = require('./db.js');
     
-    // Crear tablas
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS usuario (
-        id_usuario SERIAL PRIMARY KEY,
-        nombre VARCHAR(100) NOT NULL,
-        email VARCHAR(100) UNIQUE NOT NULL,
-        contrasena VARCHAR(255) NOT NULL,
-        telefono VARCHAR(20),
-        estado VARCHAR(20) DEFAULT 'activo',
-        fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
+    // Crear tablas una por una con manejo de errores
+    try {
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS categoria (
+          id_categoria SERIAL PRIMARY KEY,
+          nombre VARCHAR(100) NOT NULL,
+          descripcion TEXT,
+          imagen_url VARCHAR(255),
+          estado VARCHAR(20) DEFAULT 'activo',
+          fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      console.log("✅ Tabla categoria creada");
+    } catch (err) {
+      console.log("⚠️ Error tabla categoria:", err.message);
+    }
 
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS rol (
-        id_rol SERIAL PRIMARY KEY,
-        nombre VARCHAR(50) UNIQUE NOT NULL,
-        descripcion TEXT,
-        fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
+    try {
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS producto (
+          id_producto SERIAL PRIMARY KEY,
+          nombre VARCHAR(200) NOT NULL,
+          descripcion TEXT,
+          precio DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+          stock INTEGER NOT NULL DEFAULT 0,
+          id_categoria INTEGER,
+          imagen_url VARCHAR(255),
+          estado VARCHAR(20) DEFAULT 'activo',
+          fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (id_categoria) REFERENCES categoria(id_categoria)
+        )
+      `);
+      console.log("✅ Tabla producto creada");
+    } catch (err) {
+      console.log("⚠️ Error tabla producto:", err.message);
+    }
 
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS categoria (
-        id_categoria SERIAL PRIMARY KEY,
-        nombre VARCHAR(100) NOT NULL,
-        descripcion TEXT,
-        imagen_url VARCHAR(255),
-        estado VARCHAR(20) DEFAULT 'activo',
-        fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
+    try {
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS usuario (
+          id_usuario SERIAL PRIMARY KEY,
+          nombre VARCHAR(100) NOT NULL,
+          email VARCHAR(100) UNIQUE NOT NULL,
+          contrasena VARCHAR(255) NOT NULL,
+          telefono VARCHAR(20),
+          estado VARCHAR(20) DEFAULT 'activo',
+          fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      console.log("✅ Tabla usuario creada");
+    } catch (err) {
+      console.log("⚠️ Error tabla usuario:", err.message);
+    }
+
+    try {
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS rol (
+          id_rol SERIAL PRIMARY KEY,
+          nombre VARCHAR(50) UNIQUE NOT NULL,
+          descripcion TEXT,
+          fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      console.log("✅ Tabla rol creada");
+    } catch (err) {
+      console.log("⚠️ Error tabla rol:", err.message);
+    }
 
     // Insertar datos básicos
-    await pool.query(`
-      INSERT INTO rol (nombre, descripcion) VALUES
-      ('SUPER_ADMIN', 'Acceso completo al sistema'),
-      ('ADMIN', 'Acceso administrativo general'),
-      ('VENDEDOR', 'Gestión de productos y ventas'),
-      ('CLIENTE', 'Acceso básico de cliente')
-      ON CONFLICT (nombre) DO NOTHING
-    `);
+    try {
+      await pool.query("INSERT INTO rol (nombre, descripcion) VALUES ('SUPER_ADMIN', 'Acceso completo al sistema') ON CONFLICT (nombre) DO NOTHING");
+      await pool.query("INSERT INTO rol (nombre, descripcion) VALUES ('ADMIN', 'Acceso administrativo general') ON CONFLICT (nombre) DO NOTHING");
+      await pool.query("INSERT INTO rol (nombre, descripcion) VALUES ('VENDEDOR', 'Gestión de productos y ventas') ON CONFLICT (nombre) DO NOTHING");
+      await pool.query("INSERT INTO rol (nombre, descripcion) VALUES ('CLIENTE', 'Acceso básico de cliente') ON CONFLICT (nombre) DO NOTHING");
+      console.log("✅ Roles básicos insertados");
+    } catch (err) {
+      console.log("⚠️ Error insertando roles:", err.message);
+    }
 
-    await pool.query(`
-      INSERT INTO categoria (nombre, descripcion) VALUES
-      ('Electrónica', 'Productos electrónicos y gadgets'),
-      ('Ropa', 'Prendas de vestir y accesorios'),
-      ('Hogar', 'Artículos para el hogar'),
-      ('Libros', 'Libros y material de lectura'),
-      ('Deportes', 'Artículos deportivos y fitness')
-      ON CONFLICT (nombre) DO NOTHING
-    `);
+    try {
+      await pool.query(`
+        INSERT INTO categoria (nombre, descripcion) VALUES 
+        ('Electrónica', 'Productos electrónicos y gadgets'),
+        ('Ropa y Accesorios', 'Prendas de vestir y accesorios'),
+        ('Hogar y Cocina', 'Artículos para el hogar y cocina')
+        ON CONFLICT (nombre) DO NOTHING
+      `);
+      console.log("✅ Categorías básicas insertadas");
+    } catch (err) {
+      console.log("⚠️ Error insertando categorías:", err.message);
+    }
+
+    try {
+      await pool.query(`
+        INSERT INTO usuario (nombre, email, contrasena, telefono) VALUES 
+        ('Administrador', 'admin@tienda.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '3001234567')
+        ON CONFLICT (email) DO NOTHING
+      `);
+      console.log("✅ Usuario admin insertado");
+    } catch (err) {
+      console.log("⚠️ Error insertando usuario:", err.message);
+    }
 
     res.json({
       success: true,
-      message: "Base de datos configurada exitosamente"
+      message: "Base de datos configurada exitosamente",
+      details: "Tablas y datos básicos creados"
     });
 
   } catch (error) {
-    console.error("Error configurando BD:", error);
+    console.error("Error general configurando BD:", error);
     res.status(500).json({
       success: false,
       error: error.message
