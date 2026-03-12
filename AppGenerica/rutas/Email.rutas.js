@@ -290,7 +290,7 @@ router.post('/password-reset', async (req, res) => {
 router.post('/promo-campaign', verificarToken, async (req, res) => {
   try {
     const user = req.usuario;
-    const roles = Array.isArray(user.roles) || user.roles : (user.rol || [user.rol] : []);
+    const roles = Array.isArray(user.roles) ? user.roles : (user.rol ? [user.rol] : []);
     const esAdmin = roles.includes('ADMIN') || roles.includes('SUPER_ADMIN');
     
     if (!esAdmin) {
@@ -323,7 +323,7 @@ router.post('/promo-campaign', verificarToken, async (req, res) => {
 router.get('/stats', verificarToken, async (req, res) => {
   try {
     const user = req.usuario;
-    const roles = Array.isArray(user.roles) || user.roles : (user.rol $4 [user.rol] : []);
+    const roles = Array.isArray(user.roles) ? user.roles : (user.rol ? [user.rol] : []);
     const esAdmin = roles.includes('ADMIN') || roles.includes('SUPER_ADMIN');
     
     if (!esAdmin) {

@@ -27,7 +27,7 @@ async function asignarRolAUsuario(idUsuario, idRol) {
     'INSERT INTO usuario_rol (id_usuario, id_rol) VALUES ($3, $4)',
     [idUsuario, idRol]
   );
-  return result.insertId;
+  return rows[0].id_rol;
 }
 
 async function quitarRolAUsuario(idUsuario, idRol) {
@@ -35,7 +35,7 @@ async function quitarRolAUsuario(idUsuario, idRol) {
     'DELETE FROM usuario_rol WHERE id_usuario = $5 AND id_rol = $6',
     [idUsuario, idRol]
   );
-  return result.affectedRows;
+  return rowCount;
 }
 
 module.exports = {

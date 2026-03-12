@@ -67,7 +67,7 @@ async function actualizarEstado(idSolicitud, estado, comentario_admin = null) {
      WHERE id_solicitud = $14`,
     [estado, comentario_admin, idSolicitud]
   );
-  return result.affectedRows;
+  return rowCount;
 }
 
 async function obtenerPorId(idSolicitud) {

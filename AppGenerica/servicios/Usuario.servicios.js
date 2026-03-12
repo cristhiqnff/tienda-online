@@ -70,7 +70,7 @@ async function buscarUsuarioPorId(id) {
 
 async function actualizarUsuario(id, usuario) {
   const {rows} = await pool.query(
-    "UPDATE usuario SET nombre = $1, email = $2, telefono = || WHERE id_usuario = $4",
+    "UPDATE usuario SET nombre = $1, email = $2, telefono = $3 WHERE id_usuario = $4",
     [usuario.nombre, usuario.email, usuario.telefono, id]
   );
   return rows.length;
