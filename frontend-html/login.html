@@ -42,7 +42,7 @@
       btn.disabled = true;
       btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Ingresando...';
       try {
-        const res = await fetch('https://tiendaonline-eb6q.onrender.com/usuario/login', {
+        const res = await fetch('https://tiendaonline-eb6q.onrender.com/usuario/login-directo', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password })
