@@ -2,7 +2,9 @@
 const { Pool } = require('pg');
 require('dotenv').config();
 
+// Intentar con variables de entorno primero
 const pool = new Pool({
+    connectionString: process.env.DATABASE_URL || null,
     host: process.env.DB_HOST || 'localhost',
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || 'root',
