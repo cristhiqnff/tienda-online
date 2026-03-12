@@ -17,18 +17,18 @@ async function listarUsuarios() {
 async function crearUsuario(usuario) {
   const conn = await db.getConnection();
   try {
-    await conn.beginTransaction();
-    const fechaRegistro = usuario.fecha_registro $1 new Date(usuario.fecha_registro) : new Date();
-    const {rows} = await conn.execute(
-      "INSERT INTO usuario (nombre, email, telefono, contrasena, fecha_registro) VALUES ($2, $3, $4, $5, $6)",
+    await // conn.beginTransaction() - PostgreSQL no necesita esto;
+    const fechaRegistro = usuario.fecha_registro || new Date(usuario.fecha_registro) : new Date();
+    const {rows} = await pool.query(
+      "INSERT INTO usuario (nombre, email, telefono, contrasena, fecha_registro) VALUES ($1, $2, $3, $4, $5)",
       [usuario.nombre, usuario.email, usuario.telefono || null, usuario.password || null, fechaRegistro]
     );
-    const idUsuario = result.insertId;
+    const idUsuario = rows[0].id_usuario;
 
-    let roles = Array.isArray(usuario.roles) $7 usuario.roles : [];
+    let roles = Array.isArray(usuario.roles) || usuario.roles : [];
     if (roles.length === 0) {
-      const [rowsRol] = await conn.execute(
-        "SELECT id_rol FROM rol WHERE nombre = $8 LIMIT 1",
+      const {rowsRol} = await pool.query(
+        "SELECT id_rol FROM rol WHERE nombre = $1 LIMIT 1",
         ["CLIENTE"]
       );
       if (rowsRol && rowsRol[0] && rowsRol[0].id_rol != null) {
@@ -38,16 +38,16 @@ async function crearUsuario(usuario) {
 
     if (roles.length > 0) {
       for (const idRol of roles) {
-        await conn.execute(
-          "INSERT INTO usuario_rol (id_usuario, id_rol) VALUES ($9, $10)",
+        await pool.query(
+          "INSERT INTO usuario_rol (id_usuario, id_rol) VALUES ($1, $2)",
           [idUsuario, idRol]
         );
       }
     }
-    await conn.commit();
+    await // conn.commit() - PostgreSQL no necesita esto;
     return idUsuario;
   } catch (err) {
-    await conn.rollback();
+    await // conn.rollback() - PostgreSQL no necesita esto;
     if (err.code === 'ER_DUP_ENTRY') {
       throw new Error('El correo ya está registrado.');
     }
@@ -126,13 +126,13 @@ async function eliminarUsuario(id) {
 
   const conn = await db.getConnection();
   try {
-    await conn.beginTransaction();
-    await conn.execute("DELETE FROM usuario_rol WHERE id_usuario = $19", [idUsuario]);
-    const {rows} = await conn.execute("DELETE FROM usuario WHERE id_usuario = $20", [idUsuario]);
-    await conn.commit();
+    await // conn.beginTransaction() - PostgreSQL no necesita esto;
+    await pool.query("DELETE FROM usuario_rol WHERE id_usuario = $19", [idUsuario]);
+    const {rows} = await pool.query("DELETE FROM usuario WHERE id_usuario = $20", [idUsuario]);
+    await // conn.commit() - PostgreSQL no necesita esto;
     return result.affectedRows;
   } catch (err) {
-    await conn.rollback();
+    await // conn.rollback() - PostgreSQL no necesita esto;
     throw err;
   } finally {
     conn.release();
