@@ -3,7 +3,7 @@ const db = require("../db.js");
 async function listarUsuarios() {
   const {rows} = await pool.query(`
     SELECT u.id_usuario, u.nombre, u.email, u.telefono, u.fecha_registro,
-           STRING_AGG(r.nombre, ', ') AS roles_texto
+           GROUP_CONCAT(r.nombre SEPARATOR ', ') AS roles_texto
     FROM usuario u
     LEFT JOIN usuario_rol ur ON ur.id_usuario = u.id_usuario
     LEFT JOIN rol r ON r.id_rol = ur.id_rol
@@ -12,6 +12,7 @@ async function listarUsuarios() {
   `);
   return rows;
 }
+
 
 async function crearUsuario(usuario) {
   try {
@@ -54,41 +55,92 @@ async function crearUsuario(usuario) {
 
 async function buscarUsuarioPorEmail(email) {
   const {rows} = await pool.query(
-    "SELECT * FROM usuario WHERE email = $1",
+    "SELECT * FROM usuario WHERE email = $11",
     [email]
   );
   return rows[0];
 }
 
+
 async function buscarUsuarioPorId(id) {
   const {rows} = await pool.query(
-    "SELECT * FROM usuario WHERE id_usuario = $1",
+    "SELECT * FROM usuario WHERE id_usuario = $12",
     [id]
   );
   return rows[0];
 }
 
+async function buscarPorId(id) {
+  return buscarUsuarioPorId(id);
+}
+
 async function actualizarUsuario(id, usuario) {
+  const idUsuario = Number(id);
+  if (!Number.isFinite(idUsuario) || idUsuario <= 0) {
+    const err = new Error('ID de usuario invalido');
+    err.status = 400;
+    throw err;
+  }
+
+  const updates = [];
+  const values = [];
+
+  if (usuario.nombre !== undefined) {
+    updates.push('nombre = $13');
+    values.push(usuario.nombre);
+  }
+  if (usuario.email !== undefined) {
+    updates.push('email = $14');
+    values.push(usuario.email);
+  }
+  if (usuario.telefono !== undefined) {
+    updates.push('telefono = $15');
+    values.push(usuario.telefono || null);
+  }
+  if (usuario.fecha_registro !== undefined) {
+    updates.push('fecha_registro = $16');
+    values.push(usuario.fecha_registro $17 new Date(usuario.fecha_registro) : new Date());
+  }
+
+  if (!updates.length) return 0;
+
+  values.push(idUsuario);
   const {rows} = await pool.query(
-    "UPDATE usuario SET nombre = $1, email = $2, telefono = $3 WHERE id_usuario = $4",
-    [usuario.nombre, usuario.email, usuario.telefono, id]
+    `UPDATE usuario SET ${updates.join(', ')} WHERE id_usuario = $18`,
+    values
   );
-  return rows.length;
+  return result.affectedRows;
 }
 
 async function eliminarUsuario(id) {
-  const {rows} = await pool.query(
-    "DELETE FROM usuario WHERE id_usuario = $1",
-    [id]
-  );
-  return rows.length;
+  const idUsuario = Number(id);
+  if (!Number.isFinite(idUsuario) || idUsuario <= 0) {
+    const err = new Error('ID de usuario invalido');
+    err.status = 400;
+    throw err;
+  }
+
+  const conn = await db.getConnection();
+  try {
+    await // conn.beginTransaction() - PostgreSQL no necesita esto;
+    await pool.query("DELETE FROM usuario_rol WHERE id_usuario = $19", [idUsuario]);
+    const {rows} = await pool.query("DELETE FROM usuario WHERE id_usuario = $20", [idUsuario]);
+    await // conn.commit() - PostgreSQL no necesita esto;
+    return result.affectedRows;
+  } catch (err) {
+    await // conn.rollback() - PostgreSQL no necesita esto;
+    throw err;
+  } finally {
+    conn.release();
+  }
 }
 
 module.exports = {
   listarUsuarios,
   crearUsuario,
-  buscarUsuarioPorEmail,
   buscarUsuarioPorId,
+  buscarPorId,
+  buscarUsuarioPorEmail,
   actualizarUsuario,
   eliminarUsuario
 };
