@@ -27,20 +27,20 @@ async function insertar({ id_producto, id_usuario, rating, comentario }) {
     throw new Error("Rating inválido");
   }
 
-  const texto = (comentario $2$3 "").toString().trim();
+  const texto = (comentario || "").toString().trim();
   if (!texto) {
     throw new Error("El comentario es obligatorio");
   }
 
   const {rows} = await pool.query(
-    `INSERT INTO resena (id_producto, id_usuario, rating, comentario)
-     VALUES ($4, $5, $6, $7)`,
+    `INSERT INTO resena (id_producto, id_usuario, calificacion, comentario)
+     VALUES ($1, $2, $3, $4) RETURNING id_resena`,
     [id_producto, id_usuario, calificacion, texto]
   );
 
   return {
     message: "Reseña registrada correctamente",
-    insertId: result.insertId
+    insertId: rows[0].id_resena
   };
 }
 
