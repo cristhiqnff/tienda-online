@@ -1,4 +1,4 @@
-const db = require("../db");
+const db = require("../db.js");
 
 async function listar() {
   const [rows] = await db.execute(

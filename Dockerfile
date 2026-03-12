@@ -1,17 +1,17 @@
-# Dockerfile para Render - Tienda Online
+# Dockerfile corregido para Render
 FROM node:18-alpine
 
 # Establecer el directorio de trabajo
 WORKDIR /app
 
-# Copiar package.json y package-lock.json
+# Copiar el package.json
 COPY AppGenerica/package*.json ./
 
 # Instalar dependencias
 RUN npm ci --only=production
 
-# Copiar el código del backend
-COPY AppGenerica/ .
+# Copiar todo el código de AppGenerica
+COPY AppGenerica/ ./
 
 # Exponer el puerto
 EXPOSE 5000

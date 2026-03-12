@@ -1,4 +1,4 @@
-const db = require("../db");
+const db = require("../db.js");
 const MAX_IMAGE_CHARS = Number(process.env.MAX_IMAGE_CHARS || (4 * 1024 * 1024)); // ~4MB en texto/base64
 
 let _hasCiudadOrigenPromise;
