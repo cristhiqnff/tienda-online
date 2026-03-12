@@ -1,7 +1,7 @@
 const db = require("../db.js");
 
 async function listarPorProducto(idProducto) {
-  const [rows] = await db.execute(
+  const {rows} = await pool.query(
     `
     SELECT
       r.id_resena,
@@ -13,7 +13,7 @@ async function listarPorProducto(idProducto) {
       u.nombre AS usuario
     FROM resena r
     JOIN usuario u ON u.id_usuario = r.id_usuario
-    WHERE r.id_producto = ?
+    WHERE r.id_producto = $1
     ORDER BY r.fecha DESC, r.id_resena DESC
     `,
     [idProducto]
@@ -27,14 +27,14 @@ async function insertar({ id_producto, id_usuario, rating, comentario }) {
     throw new Error("Rating inválido");
   }
 
-  const texto = (comentario ?? "").toString().trim();
+  const texto = (comentario $2$3 "").toString().trim();
   if (!texto) {
     throw new Error("El comentario es obligatorio");
   }
 
-  const [result] = await db.execute(
+  const {rows} = await pool.query(
     `INSERT INTO resena (id_producto, id_usuario, rating, comentario)
-     VALUES (?, ?, ?, ?)`,
+     VALUES ($4, $5, $6, $7)`,
     [id_producto, id_usuario, calificacion, texto]
   );
 
@@ -45,7 +45,7 @@ async function insertar({ id_producto, id_usuario, rating, comentario }) {
 }
 
 async function ratingPorVendedor() {
-  const [rows] = await db.execute(`
+  const {rows} = await pool.query(`
     SELECT
       v.id_usuario AS id_vendedor,
       v.nombre AS vendedor_nombre,
@@ -65,7 +65,7 @@ async function ratingPorVendedor() {
 }
 
 async function resenasPorVendedor(idVendedor) {
-  const [rows] = await db.execute(`
+  const {rows} = await pool.query(`
     SELECT
       r.id_resena, r.rating, r.comentario, r.fecha,
       u.nombre AS usuario,
@@ -73,7 +73,7 @@ async function resenasPorVendedor(idVendedor) {
     FROM resena r
     JOIN usuario u ON u.id_usuario = r.id_usuario
     JOIN producto p ON p.id_producto = r.id_producto
-    WHERE p.id_vendedor = ?
+    WHERE p.id_vendedor = $8
     ORDER BY r.fecha DESC
     LIMIT 20
   `, [idVendedor]);

@@ -2,7 +2,7 @@ const db = require("../db.js");
 
 
 async function listar() {
-  const [rows] = await db.execute(`
+  const {rows} = await pool.query(`
     SELECT 
       p.id_pago,
       p.id_pedido,
@@ -16,9 +16,9 @@ async function listar() {
 
 
 async function insertar(pago) {
-  const [result] = await db.execute(
+  const {rows} = await pool.query(
     `INSERT INTO pago (id_pedido, metodo_pago, monto, fecha_pago)
-     VALUES (?, ?, ?, ?)`,
+     VALUES ($1, $2, $3, $4)`,
     [
       pago.id_pedido,
       pago.metodo_pago,
@@ -35,10 +35,10 @@ async function insertar(pago) {
 
 
 async function actualizar(id, pago) {
-  const [result] = await db.execute(
+  const {rows} = await pool.query(
     `UPDATE pago
-     SET metodo_pago = ?, monto = ?
-     WHERE id_pago = ?`,
+     SET metodo_pago = $5, monto = $6
+     WHERE id_pago = $7`,
     [
       pago.metodo_pago,
       pago.monto,
@@ -50,8 +50,8 @@ async function actualizar(id, pago) {
 
 
 async function eliminar(id) {
-  const [result] = await db.execute(
-    "DELETE FROM pago WHERE id_pago = ?",
+  const {rows} = await pool.query(
+    "DELETE FROM pago WHERE id_pago = $8",
     [id]
   );
   return result.affectedRows;

@@ -25,7 +25,7 @@ router.get('/resumen', [verificarToken, verificarRol], async (req, res) => {
             WHERE estado = 'activo'
         `;
         
-        const [result] = await db.execute(query);
+        const {rows} = await pool.query(query);
         
         res.json({
             success: true,
@@ -70,23 +70,23 @@ router.get('/producto/:id_producto', [verificarToken, verificarRol], async (req,
                 k.created_at
             FROM kardex k
             INNER JOIN tipos_movimiento tm ON k.id_tipo = tm.id_tipo
-            WHERE k.id_producto = ?
+            WHERE k.id_producto = $1
         `;
         
         const params = [id_producto];
         
         if (fecha_inicio && fecha_fin) {
-            query += ' AND k.fecha BETWEEN ? AND ?';
+            query += ' AND k.fecha BETWEEN $2 AND $3';
             params.push(fecha_inicio, fecha_fin);
         }
         
         query += ' ORDER BY k.fecha DESC, k.hora DESC, k.id_kardex DESC';
         
-        const [movimientos] = await db.execute(query, params);
+        const [movimientos] = await pool.query(query, params);
         
         // Obtener información del producto
-        const [producto] = await db.execute(
-            'SELECT * FROM producto WHERE id_producto = ?',
+        const [producto] = await pool.query(
+            'SELECT * FROM producto WHERE id_producto = $4',
             [id_producto]
         );
         
@@ -136,7 +136,7 @@ router.get('/stock-critico', [verificarToken, verificarRol], async (req, res) =>
             ORDER BY (p.stock_minimo - p.stock_actual) DESC
         `;
         
-        const [productos] = await db.execute(query);
+        const [productos] = await pool.query(query);
         
         res.json({
             success: true,
@@ -172,7 +172,7 @@ router.get('/valor-inventario', [verificarToken, verificarRol], async (req, res)
             WHERE estado = 'activo'
         `;
         
-        const [result] = await db.execute(query);
+        const {rows} = await pool.query(query);
         
         // Obtener valor por categorías
         const queryCategorias = `
@@ -189,7 +189,7 @@ router.get('/valor-inventario', [verificarToken, verificarRol], async (req, res)
             ORDER BY valor_total_categoria DESC
         `;
         
-        const [categorias] = await db.execute(queryCategorias);
+        const [categorias] = await pool.query(queryCategorias);
         
         res.json({
             success: true,
@@ -237,8 +237,8 @@ router.post('/movimiento', [verificarToken, verificarRol], async (req, res) => {
         }
         
         // Obtener stock actual y configuración
-        const [stockResult] = await db.execute(
-            'SELECT stock_actual FROM producto WHERE id_producto = ?',
+        const [stockResult] = await pool.query(
+            'SELECT stock_actual FROM producto WHERE id_producto = $5',
             [id_producto]
         );
         
@@ -249,8 +249,8 @@ router.post('/movimiento', [verificarToken, verificarRol], async (req, res) => {
             });
         }
         
-        const [tipoResult] = await db.execute(
-            'SELECT afecta_stock FROM tipos_movimiento WHERE id_tipo = ?',
+        const [tipoResult] = await pool.query(
+            'SELECT afecta_stock FROM tipos_movimiento WHERE id_tipo = $6',
             [id_tipo]
         );
         
@@ -273,7 +273,7 @@ router.post('/movimiento', [verificarToken, verificarRol], async (req, res) => {
         }
         
         // Calcular nuevo saldo
-        const nuevo_saldo = afecta_stock === 'E' ? 
+        const nuevo_saldo = afecta_stock === 'E' $7 
             stock_actual + cantidad : 
             stock_actual - cantidad;
         
@@ -281,8 +281,8 @@ router.post('/movimiento', [verificarToken, verificarRol], async (req, res) => {
         const valor_total = cantidad * costo_unitario;
         
         // Obtener costo promedio actual
-        const [costoResult] = await db.execute(
-            'SELECT costo_promedio FROM producto WHERE id_producto = ?',
+        const [costoResult] = await pool.query(
+            'SELECT costo_promedio FROM producto WHERE id_producto = $8',
             [id_producto]
         );
         
@@ -297,8 +297,8 @@ router.post('/movimiento', [verificarToken, verificarRol], async (req, res) => {
             }
             
             // Actualizar costo promedio en producto
-            await db.execute(
-                'UPDATE producto SET costo_promedio = ?, ultima_compra = ?, ultimo_costo = ? WHERE id_producto = ?',
+            await pool.query(
+                'UPDATE producto SET costo_promedio = $9, ultima_compra = $10, ultimo_costo = $11 WHERE id_producto = $12',
                 [costo_promedio, fecha || new Date().toISOString().split('T')[0], costo_unitario, id_producto]
             );
         }
@@ -306,12 +306,12 @@ router.post('/movimiento', [verificarToken, verificarRol], async (req, res) => {
         const valor_inventario = nuevo_saldo * costo_promedio;
         
         // Insertar movimiento en kardex
-        const [insertResult] = await db.execute(`
+        const [insertResult] = await pool.query(`
             INSERT INTO kardex (
                 id_producto, id_tipo, fecha, hora, cantidad, costo_unitario,
                 saldo_anterior, saldo_actual, valor_total, valor_inventario,
                 referencia, observaciones, usuario_registro
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES ($13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25)
         `, [
             id_producto, id_tipo, fecha || new Date().toISOString().split('T')[0], 
             hora || new Date().toTimeString().split(' ')[0], cantidad, costo_unitario,
@@ -320,8 +320,8 @@ router.post('/movimiento', [verificarToken, verificarRol], async (req, res) => {
         ]);
         
         // Actualizar stock del producto
-        await db.execute(
-            'UPDATE producto SET stock_actual = ?, valor_inventario = ? WHERE id_producto = ?',
+        await pool.query(
+            'UPDATE producto SET stock_actual = $26, valor_inventario = $27 WHERE id_producto = $28',
             [nuevo_saldo, valor_inventario, id_producto]
         );
         
@@ -372,14 +372,14 @@ router.get('/movimientos-dia', [verificarToken, verificarRol], async (req, res) 
             FROM kardex k
             INNER JOIN producto p ON k.id_producto = p.id_producto
             INNER JOIN tipos_movimiento tm ON k.id_tipo = tm.id_tipo
-            WHERE DATE(k.created_at) = ?
+            WHERE DATE(k.created_at) = $29
             ORDER BY k.created_at DESC
         `;
         
-        const [movimientos] = await db.execute(query, [fecha_consulta]);
+        const [movimientos] = await pool.query(query, [fecha_consulta]);
         
         // Resumen del día
-        const [resumen] = await db.execute(`
+        const [resumen] = await pool.query(`
             SELECT 
                 COUNT(*) AS total_movimientos,
                 SUM(CASE WHEN tm.afecta_stock = 'E' THEN k.cantidad ELSE 0 END) AS total_entradas,
@@ -387,7 +387,7 @@ router.get('/movimientos-dia', [verificarToken, verificarRol], async (req, res) 
                 SUM(k.valor_total) AS valor_total_movimientos
             FROM kardex k
             INNER JOIN tipos_movimiento tm ON k.id_tipo = tm.id_tipo
-            WHERE DATE(k.created_at) = ?
+            WHERE DATE(k.created_at) = $30
         `, [fecha_consulta]);
         
         res.json({
@@ -426,7 +426,7 @@ router.get('/tipos-movimiento', [verificarToken, verificarRol], async (req, res)
             ORDER BY nombre
         `;
         
-        const [tipos] = await db.execute(query);
+        const [tipos] = await pool.query(query);
         
         res.json({
             success: true,
@@ -454,8 +454,8 @@ router.put('/ajustar-stock/:id_producto', [verificarToken, verificarRol], async 
         const usuario_registro = req.usuario.email;
         
         // Obtener stock actual
-        const [stockResult] = await db.execute(
-            'SELECT stock_actual, costo_promedio FROM producto WHERE id_producto = ?',
+        const [stockResult] = await pool.query(
+            'SELECT stock_actual, costo_promedio FROM producto WHERE id_producto = $31',
             [id_producto]
         );
         
@@ -478,7 +478,7 @@ router.put('/ajustar-stock/:id_producto', [verificarToken, verificarRol], async 
         }
         
         // Determinar tipo de movimiento
-        const id_tipo = diferencia > 0 ? 5 : 6; // AJUSTE_ENTRADA o AJUSTE_SALIDA
+        const id_tipo = diferencia > 0 $32 5 : 6; // AJUSTE_ENTRADA o AJUSTE_SALIDA
         const cantidad = Math.abs(diferencia);
         const costo_final = costo_unitario || costo_promedio_actual;
         
@@ -487,12 +487,12 @@ router.put('/ajustar-stock/:id_producto', [verificarToken, verificarRol], async 
         const valor_inventario = nuevo_stock * costo_final;
         
         // Insertar movimiento de ajuste
-        await db.execute(`
+        await pool.query(`
             INSERT INTO kardex (
                 id_producto, id_tipo, fecha, hora, cantidad, costo_unitario,
                 saldo_anterior, saldo_actual, valor_total, valor_inventario,
                 referencia, observaciones, usuario_registro
-            ) VALUES (?, ?, CURDATE(), CURTIME(), ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES ($33, $34, CURDATE(), CURTIME(), $35, $36, $37, $38, $39, $40, $41, $42, $43)
         `, [
             id_producto, id_tipo, cantidad, costo_final,
             stock_actual, nuevo_stock, valor_total, valor_inventario,
@@ -500,8 +500,8 @@ router.put('/ajustar-stock/:id_producto', [verificarToken, verificarRol], async 
         ]);
         
         // Actualizar stock del producto
-        await db.execute(
-            'UPDATE producto SET stock_actual = ?, valor_inventario = ? WHERE id_producto = ?',
+        await pool.query(
+            'UPDATE producto SET stock_actual = $44, valor_inventario = $45 WHERE id_producto = $46',
             [nuevo_stock, valor_inventario, id_producto]
         );
         
@@ -562,23 +562,23 @@ router.get('/reporte/movimientos', [verificarToken, verificarRol], async (req, r
         const params = [];
         
         if (fecha_inicio && fecha_fin) {
-            query += ' AND k.fecha BETWEEN ? AND ?';
+            query += ' AND k.fecha BETWEEN $47 AND $48';
             params.push(fecha_inicio, fecha_fin);
         }
         
         if (id_producto) {
-            query += ' AND k.id_producto = ?';
+            query += ' AND k.id_producto = $49';
             params.push(id_producto);
         }
         
         if (id_tipo) {
-            query += ' AND k.id_tipo = ?';
+            query += ' AND k.id_tipo = $50';
             params.push(id_tipo);
         }
         
         query += ' ORDER BY k.fecha DESC, k.hora DESC';
         
-        const [movimientos] = await db.execute(query, params);
+        const [movimientos] = await pool.query(query, params);
         
         res.json({
             success: true,
@@ -625,10 +625,10 @@ router.get('/reporte/valorizacion', [verificarToken, verificarRol], async (req, 
             ORDER BY p.valor_inventario DESC
         `;
         
-        const [productos] = await db.execute(query);
+        const [productos] = await pool.query(query);
         
         // Totales
-        const [totales] = await db.execute(`
+        const [totales] = await pool.query(`
             SELECT 
                 COUNT(*) AS total_productos,
                 SUM(stock_actual) AS total_unidades,

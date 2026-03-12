@@ -1,7 +1,7 @@
 const db = require("../db.js");
 
 async function listarUsuarios() {
-  const [rows] = await db.execute(`
+  const {rows} = await pool.query(`
     SELECT u.id_usuario, u.nombre, u.email, u.telefono, u.fecha_registro,
            GROUP_CONCAT(r.nombre SEPARATOR ', ') AS roles_texto
     FROM usuario u
@@ -18,17 +18,17 @@ async function crearUsuario(usuario) {
   const conn = await db.getConnection();
   try {
     await conn.beginTransaction();
-    const fechaRegistro = usuario.fecha_registro ? new Date(usuario.fecha_registro) : new Date();
-    const [result] = await conn.execute(
-      "INSERT INTO usuario (nombre, email, telefono, contrasena, fecha_registro) VALUES (?, ?, ?, ?, ?)",
+    const fechaRegistro = usuario.fecha_registro $1 new Date(usuario.fecha_registro) : new Date();
+    const {rows} = await conn.execute(
+      "INSERT INTO usuario (nombre, email, telefono, contrasena, fecha_registro) VALUES ($2, $3, $4, $5, $6)",
       [usuario.nombre, usuario.email, usuario.telefono || null, usuario.password || null, fechaRegistro]
     );
     const idUsuario = result.insertId;
 
-    let roles = Array.isArray(usuario.roles) ? usuario.roles : [];
+    let roles = Array.isArray(usuario.roles) $7 usuario.roles : [];
     if (roles.length === 0) {
       const [rowsRol] = await conn.execute(
-        "SELECT id_rol FROM rol WHERE nombre = ? LIMIT 1",
+        "SELECT id_rol FROM rol WHERE nombre = $8 LIMIT 1",
         ["CLIENTE"]
       );
       if (rowsRol && rowsRol[0] && rowsRol[0].id_rol != null) {
@@ -39,7 +39,7 @@ async function crearUsuario(usuario) {
     if (roles.length > 0) {
       for (const idRol of roles) {
         await conn.execute(
-          "INSERT INTO usuario_rol (id_usuario, id_rol) VALUES (?, ?)",
+          "INSERT INTO usuario_rol (id_usuario, id_rol) VALUES ($9, $10)",
           [idUsuario, idRol]
         );
       }
@@ -58,8 +58,8 @@ async function crearUsuario(usuario) {
 }
 
 async function buscarUsuarioPorEmail(email) {
-  const [rows] = await db.execute(
-    "SELECT * FROM usuario WHERE email = ?",
+  const {rows} = await pool.query(
+    "SELECT * FROM usuario WHERE email = $11",
     [email]
   );
   return rows[0];
@@ -67,8 +67,8 @@ async function buscarUsuarioPorEmail(email) {
 
 
 async function buscarUsuarioPorId(id) {
-  const [rows] = await db.execute(
-    "SELECT * FROM usuario WHERE id_usuario = ?",
+  const {rows} = await pool.query(
+    "SELECT * FROM usuario WHERE id_usuario = $12",
     [id]
   );
   return rows[0];
@@ -90,27 +90,27 @@ async function actualizarUsuario(id, usuario) {
   const values = [];
 
   if (usuario.nombre !== undefined) {
-    updates.push('nombre = ?');
+    updates.push('nombre = $13');
     values.push(usuario.nombre);
   }
   if (usuario.email !== undefined) {
-    updates.push('email = ?');
+    updates.push('email = $14');
     values.push(usuario.email);
   }
   if (usuario.telefono !== undefined) {
-    updates.push('telefono = ?');
+    updates.push('telefono = $15');
     values.push(usuario.telefono || null);
   }
   if (usuario.fecha_registro !== undefined) {
-    updates.push('fecha_registro = ?');
-    values.push(usuario.fecha_registro ? new Date(usuario.fecha_registro) : new Date());
+    updates.push('fecha_registro = $16');
+    values.push(usuario.fecha_registro $17 new Date(usuario.fecha_registro) : new Date());
   }
 
   if (!updates.length) return 0;
 
   values.push(idUsuario);
-  const [result] = await db.execute(
-    `UPDATE usuario SET ${updates.join(', ')} WHERE id_usuario = ?`,
+  const {rows} = await pool.query(
+    `UPDATE usuario SET ${updates.join(', ')} WHERE id_usuario = $18`,
     values
   );
   return result.affectedRows;
@@ -127,8 +127,8 @@ async function eliminarUsuario(id) {
   const conn = await db.getConnection();
   try {
     await conn.beginTransaction();
-    await conn.execute("DELETE FROM usuario_rol WHERE id_usuario = ?", [idUsuario]);
-    const [result] = await conn.execute("DELETE FROM usuario WHERE id_usuario = ?", [idUsuario]);
+    await conn.execute("DELETE FROM usuario_rol WHERE id_usuario = $19", [idUsuario]);
+    const {rows} = await conn.execute("DELETE FROM usuario WHERE id_usuario = $20", [idUsuario]);
     await conn.commit();
     return result.affectedRows;
   } catch (err) {

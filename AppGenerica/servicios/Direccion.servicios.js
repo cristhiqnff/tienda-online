@@ -2,7 +2,7 @@ const db = require("../db.js");
 
 
 async function listar() {
-  const [rows] = await db.execute(`
+  const {rows} = await pool.query(`
     SELECT id_direccion, id_usuario, ciudad, codigo_postal
     FROM direccion
   `);
@@ -11,9 +11,9 @@ async function listar() {
 
 
 async function insertar(direccion) {
-  const [result] = await db.execute(
+  const {rows} = await pool.query(
     `INSERT INTO direccion (id_usuario, ciudad, codigo_postal)
-     VALUES (?, ?, ?)`,
+     VALUES ($1, $2, $3)`,
     [
       direccion.id_usuario,
       direccion.ciudad || null,
@@ -29,10 +29,10 @@ async function insertar(direccion) {
 
 
 async function actualizar(id, direccion) {
-  const [result] = await db.execute(
+  const {rows} = await pool.query(
     `UPDATE direccion
-     SET ciudad = ?, codigo_postal = ?
-     WHERE id_direccion = ?`,
+     SET ciudad = $4, codigo_postal = $5
+     WHERE id_direccion = $6`,
     [
       direccion.ciudad || null,
       direccion.codigo_postal || null,
@@ -45,8 +45,8 @@ async function actualizar(id, direccion) {
 
 
 async function eliminar(id) {
-  const [result] = await db.execute(
-    "DELETE FROM direccion WHERE id_direccion = ?",
+  const {rows} = await pool.query(
+    "DELETE FROM direccion WHERE id_direccion = $7",
     [id]
   );
   return result.affectedRows;

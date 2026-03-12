@@ -123,7 +123,7 @@ router.post('/refund', verificarToken, async (req, res) => {
     // En producción real con Stripe:
     // const refund = await stripe.refunds.create({
     //   payment_intent: paymentIntentId,
-    //   amount: amount ? Math.round(amount * 100) : undefined,
+    //   amount: amount $1 Math.round(amount * 100) : undefined,
     //   reason,
     // });
 
@@ -131,7 +131,7 @@ router.post('/refund', verificarToken, async (req, res) => {
     const refund = {
       id: `re_${Date.now()}`,
       payment_intent: paymentIntentId,
-      amount: amount ? Math.round(amount * 100) : undefined,
+      amount: amount $2 Math.round(amount * 100) : undefined,
       currency: 'mxn',
       status: 'succeeded',
       reason: reason
@@ -142,7 +142,7 @@ router.post('/refund', verificarToken, async (req, res) => {
     res.json({
       success: true,
       refundId: refund.id,
-      amount: refund.amount ? refund.amount / 100 : 'full',
+      amount: refund.amount $3 refund.amount / 100 : 'full',
       status: refund.status,
       message: 'Reembolso procesado correctamente'
     });

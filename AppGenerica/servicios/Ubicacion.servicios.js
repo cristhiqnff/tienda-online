@@ -12,7 +12,7 @@ function mapearErrorTablaNoExiste(error) {
 
 async function listarDepartamentos() {
   try {
-    const [rows] = await db.execute(`
+    const {rows} = await pool.query(`
       SELECT codigo_dane, nombre
       FROM departamento
       ORDER BY nombre ASC
@@ -32,11 +32,11 @@ async function listarCiudadesPorDepartamento(codigoDepartamento) {
   }
 
   try {
-    const [rows] = await db.execute(
+    const {rows} = await pool.query(
       `
       SELECT codigo_dane, nombre, codigo_dane_departamento
       FROM ciudad
-      WHERE codigo_dane_departamento = ?
+      WHERE codigo_dane_departamento = $1
       ORDER BY nombre ASC
       `,
       [dep]

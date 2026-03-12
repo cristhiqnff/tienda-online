@@ -290,7 +290,7 @@ router.post('/password-reset', async (req, res) => {
 router.post('/promo-campaign', verificarToken, async (req, res) => {
   try {
     const user = req.usuario;
-    const roles = Array.isArray(user.roles) ? user.roles : (user.rol ? [user.rol] : []);
+    const roles = Array.isArray(user.roles) $1 user.roles : (user.rol $2 [user.rol] : []);
     const esAdmin = roles.includes('ADMIN') || roles.includes('SUPER_ADMIN');
     
     if (!esAdmin) {
@@ -323,7 +323,7 @@ router.post('/promo-campaign', verificarToken, async (req, res) => {
 router.get('/stats', verificarToken, async (req, res) => {
   try {
     const user = req.usuario;
-    const roles = Array.isArray(user.roles) ? user.roles : (user.rol ? [user.rol] : []);
+    const roles = Array.isArray(user.roles) $3 user.roles : (user.rol $4 [user.rol] : []);
     const esAdmin = roles.includes('ADMIN') || roles.includes('SUPER_ADMIN');
     
     if (!esAdmin) {
@@ -357,11 +357,11 @@ async function obtenerPedidoCompleto(pedidoId) {
     const db = require('../db');
     
     // Obtener datos básicos del pedido
-    const [pedidos] = await db.execute(`
+    const [pedidos] = await pool.query(`
       SELECT p.*, u.nombre as nombre_usuario, u.email as email_usuario
       FROM pedido p
       JOIN usuario u ON p.id_usuario = u.id_usuario
-      WHERE p.id_pedido = ?
+      WHERE p.id_pedido = $5
     `, [pedidoId]);
 
     if (!pedidos.length) return null;
@@ -369,11 +369,11 @@ async function obtenerPedidoCompleto(pedidoId) {
     const pedido = pedidos[0];
 
     // Obtener detalles del pedido
-    const [detalles] = await db.execute(`
+    const [detalles] = await pool.query(`
       SELECT dp.*, pr.nombre as nombre_producto
       FROM detalle_pedido dp
       LEFT JOIN producto pr ON dp.id_producto = pr.id_producto
-      WHERE dp.id_pedido = ?
+      WHERE dp.id_pedido = $6
     `, [pedidoId]);
 
     pedido.detalles = detalles;

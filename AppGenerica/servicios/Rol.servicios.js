@@ -1,11 +1,11 @@
 const db = require('../db');
 
 async function obtenerRolesPorUsuario(idUsuario) {
-  const [rows] = await db.execute(
+  const {rows} = await pool.query(
     `SELECT r.id_rol, r.nombre
      FROM rol r
      JOIN usuario_rol ur ON r.id_rol = ur.id_rol
-     WHERE ur.id_usuario = ?`,
+     WHERE ur.id_usuario = $1`,
     [idUsuario]
   );
 
@@ -13,26 +13,26 @@ async function obtenerRolesPorUsuario(idUsuario) {
 }
 
 async function listar() {
-  const [rows] = await db.execute('SELECT id_rol, nombre FROM rol ORDER BY nombre');
+  const {rows} = await pool.query('SELECT id_rol, nombre FROM rol ORDER BY nombre');
   return rows;
 }
 
 async function buscarPorId(idRol) {
-  const [rows] = await db.execute('SELECT id_rol, nombre FROM rol WHERE id_rol = ?', [idRol]);
+  const {rows} = await pool.query('SELECT id_rol, nombre FROM rol WHERE id_rol = $2', [idRol]);
   return rows[0];
 }
 
 async function asignarRolAUsuario(idUsuario, idRol) {
-  const [result] = await db.execute(
-    'INSERT INTO usuario_rol (id_usuario, id_rol) VALUES (?, ?)',
+  const {rows} = await pool.query(
+    'INSERT INTO usuario_rol (id_usuario, id_rol) VALUES ($3, $4)',
     [idUsuario, idRol]
   );
   return result.insertId;
 }
 
 async function quitarRolAUsuario(idUsuario, idRol) {
-  const [result] = await db.execute(
-    'DELETE FROM usuario_rol WHERE id_usuario = ? AND id_rol = ?',
+  const {rows} = await pool.query(
+    'DELETE FROM usuario_rol WHERE id_usuario = $5 AND id_rol = $6',
     [idUsuario, idRol]
   );
   return result.affectedRows;

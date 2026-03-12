@@ -6,7 +6,7 @@ const { verificarToken, verificarRol } = require('../middlewares/auth');
 router.get('/overview', verificarToken, async (req, res) => {
   try {
     const user = req.usuario;
-    const roles = Array.isArray(user.roles) ? user.roles : (user.rol ? [user.rol] : []);
+    const roles = Array.isArray(user.roles) $1 user.roles : (user.rol $2 [user.rol] : []);
     const esAdmin = roles.includes('ADMIN') || roles.includes('SUPER_ADMIN');
     
     if (!esAdmin) {
@@ -16,7 +16,7 @@ router.get('/overview', verificarToken, async (req, res) => {
     const db = require('../db');
     
     // Métricas generales
-    const [totalStats] = await db.execute(`
+    const [totalStats] = await pool.query(`
       SELECT 
         COUNT(DISTINCT u.id_usuario) as total_usuarios,
         COUNT(DISTINCT p.id_pedido) as total_pedidos,
@@ -31,7 +31,7 @@ router.get('/overview', verificarToken, async (req, res) => {
     `);
 
     // Ventas por mes (últimos 6 meses)
-    const [ventasMensuales] = await db.execute(`
+    const [ventasMensuales] = await pool.query(`
       SELECT 
         DATE_FORMAT(fecha_pedido, '%Y-%m') as mes,
         COUNT(*) as cantidad_pedidos,
@@ -44,7 +44,7 @@ router.get('/overview', verificarToken, async (req, res) => {
     `);
 
     // Productos más vendidos
-    const [productosTop] = await db.execute(`
+    const [productosTop] = await pool.query(`
       SELECT 
         pr.nombre,
         SUM(dp.cantidad) as total_vendido,
@@ -59,7 +59,7 @@ router.get('/overview', verificarToken, async (req, res) => {
     `);
 
     // Categorías más populares
-    const [categoriasTop] = await db.execute(`
+    const [categoriasTop] = await pool.query(`
       SELECT 
         c.nombre,
         COUNT(DISTINCT dp.id_detalle_pedido) as total_ventas,
@@ -75,7 +75,7 @@ router.get('/overview', verificarToken, async (req, res) => {
     `);
 
     // Estado de pedidos
-    const [estadosPedidos] = await db.execute(`
+    const [estadosPedidos] = await pool.query(`
       SELECT 
         ep.nombre as estado,
         COUNT(p.id_pedido) as cantidad,
@@ -87,7 +87,7 @@ router.get('/overview', verificarToken, async (req, res) => {
     `);
 
     // Usuarios activos vs inactivos
-    const [usuariosActividad] = await db.execute(`
+    const [usuariosActividad] = await pool.query(`
       SELECT 
         'Activos' as tipo,
         COUNT(*) as cantidad
@@ -102,7 +102,7 @@ router.get('/overview', verificarToken, async (req, res) => {
     `);
 
     // Ingresos por método de pago
-    const [ingresosPorMetodo] = await db.execute(`
+    const [ingresosPorMetodo] = await pool.query(`
       SELECT 
         COALESCE(metodo_pago, 'No especificado') as metodo,
         COUNT(*) as cantidad,
@@ -115,7 +115,7 @@ router.get('/overview', verificarToken, async (req, res) => {
     `);
 
     // Tendencia de crecimiento (últimos 7 días)
-    const [tendenciaSemanal] = await db.execute(`
+    const [tendenciaSemanal] = await pool.query(`
       SELECT 
         DATE(fecha_pedido) as fecha,
         COUNT(*) as pedidos_diarios,
@@ -127,7 +127,7 @@ router.get('/overview', verificarToken, async (req, res) => {
     `);
 
     // Productos con bajo stock
-    const [productosBajoStock] = await db.execute(`
+    const [productosBajoStock] = await pool.query(`
       SELECT 
         pr.nombre,
         pr.stock,
@@ -164,7 +164,7 @@ router.get('/overview', verificarToken, async (req, res) => {
 router.get('/ventas', verificarToken, async (req, res) => {
   try {
     const user = req.usuario;
-    const roles = Array.isArray(user.roles) ? user.roles : (user.rol ? [user.rol] : []);
+    const roles = Array.isArray(user.roles) $3 user.roles : (user.rol $4 [user.rol] : []);
     const esAdmin = roles.includes('ADMIN') || roles.includes('SUPER_ADMIN');
     
     if (!esAdmin) {
@@ -180,7 +180,7 @@ router.get('/ventas', verificarToken, async (req, res) => {
 
     const db = require('../db');
     
-    const [ventas] = await db.execute(`
+    const [ventas] = await pool.query(`
       SELECT 
         DATE(fecha_pedido) as fecha,
         COUNT(*) as cantidad_pedidos,
@@ -204,7 +204,7 @@ router.get('/ventas', verificarToken, async (req, res) => {
 router.get('/productos', verificarToken, async (req, res) => {
   try {
     const user = req.usuario;
-    const roles = Array.isArray(user.roles) ? user.roles : (user.rol ? [user.rol] : []);
+    const roles = Array.isArray(user.roles) $5 user.roles : (user.rol $6 [user.rol] : []);
     const esAdmin = roles.includes('ADMIN') || roles.includes('SUPER_ADMIN');
     
     if (!esAdmin) {
@@ -214,7 +214,7 @@ router.get('/productos', verificarToken, async (req, res) => {
     const db = require('../db');
     
     // Top productos por ventas
-    const [topVentas] = await db.execute(`
+    const [topVentas] = await pool.query(`
       SELECT 
         pr.id_producto,
         pr.nombre,
@@ -233,7 +233,7 @@ router.get('/productos', verificarToken, async (req, res) => {
     `);
 
     // Top productos por ingresos
-    const [topIngresos] = await db.execute(`
+    const [topIngresos] = await pool.query(`
       SELECT 
         pr.id_producto,
         pr.nombre,
@@ -252,7 +252,7 @@ router.get('/productos', verificarToken, async (req, res) => {
     `);
 
     // Productos sin ventas
-    const [sinVentas] = await db.execute(`
+    const [sinVentas] = await pool.query(`
       SELECT 
         pr.id_producto,
         pr.nombre,
@@ -274,7 +274,7 @@ router.get('/productos', verificarToken, async (req, res) => {
     `);
 
     // Análisis de precios
-    const [analisisPrecios] = await db.execute(`
+    const [analisisPrecios] = await pool.query(`
       SELECT 
         CASE 
           WHEN precio < 100 THEN '0-100'
@@ -315,7 +315,7 @@ router.get('/productos', verificarToken, async (req, res) => {
 router.get('/usuarios', verificarToken, async (req, res) => {
   try {
     const user = req.usuario;
-    const roles = Array.isArray(user.roles) ? user.roles : (user.rol ? [user.rol] : []);
+    const roles = Array.isArray(user.roles) $7 user.roles : (user.rol $8 [user.rol] : []);
     const esAdmin = roles.includes('ADMIN') || roles.includes('SUPER_ADMIN');
     
     if (!esAdmin) {
@@ -325,7 +325,7 @@ router.get('/usuarios', verificarToken, async (req, res) => {
     const db = require('../db');
     
     // Nuevos usuarios por mes
-    const [nuevosUsuarios] = await db.execute(`
+    const [nuevosUsuarios] = await pool.query(`
       SELECT 
         DATE_FORMAT(fecha_registro, '%Y-%m') as mes,
         COUNT(*) as nuevos_usuarios
@@ -336,7 +336,7 @@ router.get('/usuarios', verificarToken, async (req, res) => {
     `);
 
     // Usuarios por actividad
-    const [usuariosPorActividad] = await db.execute(`
+    const [usuariosPorActividad] = await pool.query(`
       SELECT 
         CASE 
           WHEN pedidos_totales = 0 THEN 'Sin compras'
@@ -359,7 +359,7 @@ router.get('/usuarios', verificarToken, async (req, res) => {
     `);
 
     // Top clientes por gasto
-    const [topClientes] = await db.execute(`
+    const [topClientes] = await pool.query(`
       SELECT 
         u.nombre,
         u.email,
@@ -375,7 +375,7 @@ router.get('/usuarios', verificarToken, async (req, res) => {
     `);
 
     // Retención de usuarios
-    const [retencion] = await db.execute(`
+    const [retencion] = await pool.query(`
       SELECT 
         DATE_FORMAT(fecha_registro, '%Y-%m') as mes_registro,
         COUNT(*) as usuarios_registrados,
@@ -406,7 +406,7 @@ router.get('/usuarios', verificarToken, async (req, res) => {
 router.get('/kpi', verificarToken, async (req, res) => {
   try {
     const user = req.usuario;
-    const roles = Array.isArray(user.roles) ? user.roles : (user.rol ? [user.rol] : []);
+    const roles = Array.isArray(user.roles) $9 user.roles : (user.rol $10 [user.rol] : []);
     const esAdmin = roles.includes('ADMIN') || roles.includes('SUPER_ADMIN');
     
     if (!esAdmin) {
@@ -416,7 +416,7 @@ router.get('/kpi', verificarToken, async (req, res) => {
     const db = require('../db');
     
     // KPIs principales
-    const [kpis] = await db.execute(`
+    const [kpis] = await pool.query(`
       SELECT 
         (SELECT COUNT(*) FROM pedido WHERE fecha_pedido >= CURDATE() - INTERVAL 1 DAY) as pedidos_hoy,
         (SELECT COUNT(*) FROM pedido WHERE fecha_pedido >= CURDATE() - INTERVAL 7 DAY) as pedidos_semana,
@@ -432,7 +432,7 @@ router.get('/kpi', verificarToken, async (req, res) => {
     `);
 
     // Comparación con período anterior
-    const [comparacion] = await db.execute(`
+    const [comparacion] = await pool.query(`
       SELECT 
         (SELECT COUNT(*) FROM pedido WHERE fecha_pedido >= CURDATE() - INTERVAL 1 DAY) as pedidos_hoy_actual,
         (SELECT COUNT(*) FROM pedido WHERE fecha_pedido >= CURDATE() - INTERVAL 2 DAY AND fecha_pedido < CURDATE() - INTERVAL 1 DAY) as pedidos_ayer,
@@ -445,11 +445,11 @@ router.get('/kpi', verificarToken, async (req, res) => {
     const compData = comparacion[0];
     
     const variacionPedidos = compData.pedidos_ayer > 0 
-      ? ((kpisData.pedidos_hoy - compData.pedidos_ayer) / compData.pedidos_ayer * 100).toFixed(2)
+      $11 ((kpisData.pedidos_hoy - compData.pedidos_ayer) / compData.pedidos_ayer * 100).toFixed(2)
       : 0;
     
     const variacionIngresos = compData.ingresos_ayer > 0
-      ? ((kpisData.ingresos_hoy - compData.ingresos_ayer) / compData.ingresos_ayer * 100).toFixed(2)
+      $12 ((kpisData.ingresos_hoy - compData.ingresos_ayer) / compData.ingresos_ayer * 100).toFixed(2)
       : 0;
 
     res.json({
