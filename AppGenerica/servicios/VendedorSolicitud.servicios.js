@@ -1,4 +1,4 @@
-const db = require('../db');
+const pool = require("../db.js");
 
 async function crearSolicitud(payload) {
   const {

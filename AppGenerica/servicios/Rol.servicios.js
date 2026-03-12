@@ -1,4 +1,4 @@
-const db = require('../db');
+const pool = require('../db.js');
 
 async function obtenerRolesPorUsuario(idUsuario) {
   const {rows} = await pool.query(
@@ -35,7 +35,7 @@ async function quitarRolAUsuario(idUsuario, idRol) {
     'DELETE FROM usuario_rol WHERE id_usuario = $5 AND id_rol = $6',
     [idUsuario, idRol]
   );
-  return rowCount;
+  return rows.length;
 }
 
 module.exports = {

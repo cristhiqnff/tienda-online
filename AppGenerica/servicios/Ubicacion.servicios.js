@@ -1,4 +1,4 @@
-const db = require("../db.js");
+const pool = require("../db.js");
 
 function mapearErrorTablaNoExiste(error) {
   if (!error) return error;

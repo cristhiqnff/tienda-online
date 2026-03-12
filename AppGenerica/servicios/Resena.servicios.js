@@ -1,4 +1,4 @@
-const db = require("../db.js");
+const pool = require("../db.js");
 
 async function listarPorProducto(idProducto) {
   const {rows} = await pool.query(
