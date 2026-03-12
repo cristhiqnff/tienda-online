@@ -108,8 +108,11 @@ app.get("/", (req, res) => {
   });
 });
 
+// ⚠️ ENDPOINTS DE CONFIGURACIÓN COMENTADOS PARA PRODUCCIÓN
+// Descomentar solo para desarrollo inicial
 
-// Endpoint para crear tablas automáticamente
+/*
+// Endpoint para configurar base de datos (solo desarrollo)
 app.get("/setup-database", async (req, res) => {
   try {
     const pool = require('./db.js');
@@ -234,56 +237,8 @@ app.get("/setup-database", async (req, res) => {
   }
 });
 
-// Endpoint temporal para probar categorías sin dependencias
-app.get("/categorias-test", async (req, res) => {
-  try {
-    const pool = require('./db.js');
-    
-    // Consulta directa a PostgreSQL
-    const { rows } = await pool.query(
-      "SELECT id_categoria, nombre, descripcion FROM categoria"
-    );
-    
-    res.json({
-      success: true,
-      data: rows,
-      total: rows.length
-    });
-    
-  } catch (error) {
-    console.error("Error en /categorias-test:", error);
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
-  }
-});
-
-// Endpoint temporal para probar productos
-app.get("/productos-test", async (req, res) => {
-  try {
-    const pool = require('./db.js');
-    
-    const { rows } = await pool.query(
-      "SELECT id_producto, nombre, precio, stock FROM producto"
-    );
-    
-    res.json({
-      success: true,
-      data: rows,
-      total: rows.length
-    });
-    
-  } catch (error) {
-    console.error("Error en /productos-test:", error);
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
-  }
-});
-
-// Endpoint para resetear usuario admin con contraseña simple
+/*
+// Endpoint para resetear usuario admin (solo desarrollo)
 app.get("/reset-admin", async (req, res) => {
   try {
     const pool = require('./db.js');
@@ -324,6 +279,7 @@ app.get("/reset-admin", async (req, res) => {
     });
   }
 });
+*/
 
 // Endpoint de login directo sin dependencias de servicios
 app.post("/usuario/login-directo", async (req, res) => {

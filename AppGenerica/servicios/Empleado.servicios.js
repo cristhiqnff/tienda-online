@@ -1,4 +1,4 @@
-const db = require('../db');
+const pool = require('../db');
 
 // ============= SERVICIOS DE EMPLEADOS =============
 
@@ -226,7 +226,7 @@ async function listarPerfilesPorRol(idRolEmpleado) {
 async function crearPerfil(perfil) {
   const {rows} = await pool.query(
     "INSERT INTO perfil (id_rol_empleado, nombre_perfil, descripcion, configuracion, activo) VALUES ($39, $40, $41, $42, $43)",
-    [perfil.id_rol_empleado, perfil.nombre_perfil, perfil.descripcion || null, perfil.configuracion $44 JSON.stringify(perfil.configuracion) : null, perfil.activo !== false]
+    [perfil.id_rol_empleado, perfil.nombre_perfil, perfil.descripcion || null, perfil.configuracion || JSON.stringify(perfil.configuracion) || null, perfil.activo !== false]
   );
   return result.insertId;
 }
@@ -234,7 +234,7 @@ async function crearPerfil(perfil) {
 async function actualizarPerfil(id, perfil) {
   const {rows} = await pool.query(
     "UPDATE perfil SET id_rol_empleado = $45, nombre_perfil = $46, descripcion = $47, configuracion = $48, activo = $49 WHERE id_perfil = $50",
-    [perfil.id_rol_empleado, perfil.nombre_perfil, perfil.descripcion || null, perfil.configuracion $51 JSON.stringify(perfil.configuracion) : null, perfil.activo !== false, id]
+    [perfil.id_rol_empleado, perfil.nombre_perfil, perfil.descripcion || null, perfil.configuracion || JSON.stringify(perfil.configuracion) || null, perfil.activo !== false, id]
   );
   return result.affectedRows;
 }
