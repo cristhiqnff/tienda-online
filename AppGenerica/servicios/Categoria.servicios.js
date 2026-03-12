@@ -1,15 +1,15 @@
 const db = require("../db.js");
 
 async function listar() {
-  const [rows] = await db.execute(
+  const { rows } = await db.query(
     "SELECT id_categoria, nombre, descripcion FROM categoria"
   );
   return rows;
 }
 
 async function insertar(categoria) {
-  const [result] = await db.execute(
-    "INSERT INTO categoria (nombre, descripcion) VALUES (?, ?)",
+  const { rows } = await db.query(
+    "INSERT INTO categoria (nombre, descripcion) VALUES ($1, $2) RETURNING *",
     [
       categoria.nombre,
       categoria.descripcion || null
@@ -18,30 +18,30 @@ async function insertar(categoria) {
 
   return {
     message: "Categoría registrada correctamente",
-    insertId: result.insertId
+    insertId: rows[0].id_categoria
   };
 }
 
 async function actualizar(id, categoria) {
-  const [result] = await db.execute(
+  const { rows } = await db.query(
     `UPDATE categoria
-     SET nombre = ?, descripcion = ?
-     WHERE id_categoria = ?`,
+     SET nombre = $1, descripcion = $2
+     WHERE id_categoria = $3`,
     [
       categoria.nombre,
       categoria.descripcion || null,
       id
     ]
   );
-  return result.affectedRows;
+  return rows.length;
 }
 
 async function eliminar(id) {
-  const [result] = await db.execute(
-    "DELETE FROM categoria WHERE id_categoria = ?",
+  const { rows } = await db.query(
+    "DELETE FROM categoria WHERE id_categoria = $1",
     [id]
   );
-  return result.affectedRows;
+  return rows.length;
 }
 
 module.exports = {
