@@ -21,7 +21,7 @@ async function insertar(estado) {
 
 async function actualizar(id, estado) {
   const {rows} = await pool.query(
-    "UPDATE estado_pedido SET nombre_estado = $2 WHERE id_estado = $3",
+    "UPDATE estado_pedido SET nombre_estado = || WHERE id_estado = $3",
     [estado.nombre_estado, id]
   );
   return result.affectedRows;

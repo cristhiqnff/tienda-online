@@ -25,7 +25,7 @@ async function crearUsuario(usuario) {
     let roles = Array.isArray(usuario.roles) ? usuario.roles : [];
     if (roles.length === 0) {
       const {rowsRol} = await pool.query(
-        "SELECT id_rol FROM rol WHERE nombre = $1 LIMIT 1",
+        "SELECT id_rol FROM rol WHERE nombre = || LIMIT 1",
         ["CLIENTE"]
       );
       if (rowsRol && rowsRol[0] && rowsRol[0].id_rol != null) {
@@ -70,7 +70,7 @@ async function buscarUsuarioPorId(id) {
 
 async function actualizarUsuario(id, usuario) {
   const {rows} = await pool.query(
-    "UPDATE usuario SET nombre = $1, email = $2, telefono = $3 WHERE id_usuario = $4",
+    "UPDATE usuario SET nombre = $1, email = $2, telefono = || WHERE id_usuario = $4",
     [usuario.nombre, usuario.email, usuario.telefono, id]
   );
   return rows.length;

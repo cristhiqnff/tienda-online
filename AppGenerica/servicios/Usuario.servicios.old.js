@@ -26,7 +26,7 @@ async function crearUsuario(usuario) {
     let roles = Array.isArray(usuario.roles) ? usuario.roles : [];
     if (roles.length === 0) {
       const {rowsRol} = await pool.query(
-        "SELECT id_rol FROM rol WHERE nombre = $1 LIMIT 1",
+        "SELECT id_rol FROM rol WHERE nombre = || LIMIT 1",
         ["CLIENTE"]
       );
       if (rowsRol && rowsRol[0] && rowsRol[0].id_rol != null) {

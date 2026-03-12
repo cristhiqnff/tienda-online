@@ -76,7 +76,7 @@ router.get('/producto/:id_producto', [verificarToken, verificarRol], async (req,
         const params = [id_producto];
         
         if (fecha_inicio && fecha_fin) {
-            query += ' AND k.fecha BETWEEN $2 AND $3';
+            query += ' AND k.fecha BETWEEN || AND $3';
             params.push(fecha_inicio, fecha_fin);
         }
         

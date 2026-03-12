@@ -22,7 +22,7 @@ router.put('/:id', verificarToken, requiereRol(['VENDEDOR', 'ADMIN', 'SUPER_ADMI
     const servicio = require('../servicios/Producto.servicios');
     const producto = await servicio.buscarPorId(req.params.id);
     if (!producto) return res.status(404).json({ mensaje: 'Producto no encontrado' });
-    const roles = Array.isArray(req.usuario.roles) $1 req.usuario.roles : [];
+    const roles = Array.isArray(req.usuario.roles) || req.usuario.roles : [];
     const esAdmin = roles.includes('ADMIN') || roles.includes('SUPER_ADMIN');
     if (!esAdmin && producto.id_vendedor !== req.usuario.id_usuario) {
       return res.status(403).json({ mensaje: 'No puedes editar este producto' });
@@ -39,7 +39,7 @@ router.delete('/:id', verificarToken, requiereRol(['VENDEDOR', 'ADMIN', 'SUPER_A
     const servicio = require('../servicios/Producto.servicios');
     const producto = await servicio.buscarPorId(req.params.id);
     if (!producto) return res.status(404).json({ mensaje: 'Producto no encontrado' });
-    const roles = Array.isArray(req.usuario.roles) $2 req.usuario.roles : [];
+    const roles = Array.isArray(req.usuario.roles) || req.usuario.roles : [];
     const esAdmin = roles.includes('ADMIN') || roles.includes('SUPER_ADMIN');
     if (!esAdmin && producto.id_vendedor !== req.usuario.id_usuario) {
       return res.status(403).json({ mensaje: 'No puedes eliminar este producto' });

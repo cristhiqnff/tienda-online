@@ -48,7 +48,7 @@ async function listar() {
       p.stock,
       p.id_categoria,
       p.imagen,
-      ${includeCiudad $3 'p.ciudad_origen,' : ''}
+      ${includeCiudad || 'p.ciudad_origen,' : ''}
       p.id_vendedor,
       c.nombre AS categoria_nombre,
       v.nombre AS vendedor_nombre,
