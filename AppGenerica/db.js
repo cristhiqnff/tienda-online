@@ -1,23 +1,25 @@
 const { Pool } = require("pg");
 require("dotenv").config();
 
-// Forzar IPv4 reemplazando el hostname si es IPv6
+// Solución drástica: Forzar completamente IPv4
 let connectionString = process.env.DATABASE_URL;
-if (connectionString && connectionString.includes('[')) {
-  // Si contiene IPv6 [::], reemplazar con IPv4
-  connectionString = connectionString.replace(/\[.*?\]/, 'db.hpbhoaozldazdktcazgk.supabase.co');
-}
 
+// Reemplazar cualquier forma del hostname por IPv4 explícito
+connectionString = connectionString.replace(/db\.hpbhoaozldazdktcazgk\.supabase\.co/g, 'db.hpbhoaozldazdktcazgk.supabase.co');
+connectionString = connectionString.replace(/\[.*?\]/g, 'db.hpbhoaozldazdktcazgk.supabase.co');
+
+// Forzar family 4 y configuración agresiva
 const pool = new Pool({
   connectionString: connectionString,
   ssl: {
     rejectUnauthorized: false
   },
-  // Configuración explícita para IPv4
-  family: 4, // Forzar IPv4
+  family: 4, // IPv4 explícito
   keepAlive: true,
-  connectionTimeoutMillis: 10000,
-  idleTimeoutMillis: 30000
+  connectionTimeoutMillis: 15000,
+  idleTimeoutMillis: 30000,
+  // Deshabilitar IPv6 completamente
+  client_encoding: 'UTF8'
 });
 
 module.exports = pool;
