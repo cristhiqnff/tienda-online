@@ -356,31 +356,28 @@ async function obtenerPedidoCompleto(pedidoId) {
   try {
     const db = require('../db');
     
-    // Obtener datos básicos del pedido
-    const [pedidos] = await pool.query(`
+    const [pedidos] = await db.execute(`
       SELECT p.*, u.nombre as nombre_usuario, u.email as email_usuario
       FROM pedido p
       JOIN usuario u ON p.id_usuario = u.id_usuario
-      WHERE p.id_pedido = $5
+      WHERE p.id_pedido = ?
     `, [pedidoId]);
 
     if (!pedidos.length) return null;
 
     const pedido = pedidos[0];
 
-    // Obtener detalles del pedido
-    const [detalles] = await pool.query(`
+    const [detalles] = await db.execute(`
       SELECT dp.*, pr.nombre as nombre_producto
       FROM detalle_pedido dp
       LEFT JOIN producto pr ON dp.id_producto = pr.id_producto
-      WHERE dp.id_pedido = $6
+      WHERE dp.id_pedido = ?
     `, [pedidoId]);
 
     pedido.detalles = detalles;
     return pedido;
 
   } catch (error) {
-    console.error('Error obteniendo pedido completo:', error);
     return null;
   }
 }

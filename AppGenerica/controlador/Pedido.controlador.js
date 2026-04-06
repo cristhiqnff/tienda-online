@@ -15,16 +15,26 @@ exports.obtenerPedidos = async (req, res) => {
 exports.obtenerMisPedidos = async (req, res) => {
   try {
     console.log('📋 GET /pedido/mis-pedidos');
-    const idUsuario = req.usuario?.id;
+    const idUsuario = req.usuario?.id_usuario || req.usuario?.id;
     if (!idUsuario) {
       return res.status(401).json({ error: 'Usuario no autenticado' });
     }
 
-    const pedidos = await servicio.listarPorUsuario(idUsuario);
+    const pedidos = await servicio.listarPorUsuarioCompleto(idUsuario);
     res.json(pedidos);
   } catch (err) {
     console.error('❌ Error al obtener mis pedidos:', err.message);
     res.status(500).json({ error: 'Error al obtener mis pedidos' });
+  }
+};
+
+exports.obtenerPedidosRepartidor = async (req, res) => {
+  try {
+    const pedidos = await servicio.listarParaRepartidor();
+    res.json(pedidos);
+  } catch (err) {
+    console.error('❌ Error al obtener pedidos repartidor:', err.message);
+    res.status(500).json({ error: 'Error al obtener pedidos del repartidor' });
   }
 };
 

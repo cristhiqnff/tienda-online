@@ -1,7 +1,7 @@
 const db = require("../db.js");
 
 async function listar() {
-  const {rows} = await pool.query(`
+  const [rows] = await db.execute(`
     SELECT 
       p.id_pedido,
       p.id_usuario,
@@ -9,17 +9,20 @@ async function listar() {
       p.fecha_pedido,
       p.total,
       u.nombre AS usuario,
+      u.nombre AS nombre_cliente,
+      u.email AS email_cliente,
       e.nombre_estado AS estado
     FROM pedido p
     JOIN usuario u ON p.id_usuario = u.id_usuario
     JOIN estado_pedido e ON p.id_estado = e.id_estado
+    ORDER BY p.fecha_pedido DESC
   `);
   return rows;
 }
 
 
 async function listarPorUsuario(idUsuario) {
-  const {rows} = await pool.query(
+  const [rows] = await db.execute(
     `
     SELECT 
       p.id_pedido,
@@ -30,7 +33,7 @@ async function listarPorUsuario(idUsuario) {
       e.nombre_estado AS estado
     FROM pedido p
     JOIN estado_pedido e ON p.id_estado = e.id_estado
-    WHERE p.id_usuario = $1
+    WHERE p.id_usuario = ?
     `,
     [idUsuario]
   );
@@ -43,9 +46,9 @@ async function insertar(pedido) {
   try {
     await connection.beginTransaction();
 
-    const {rows} = await connection.execute(
+    const [rows] = await connection.execute(
       `INSERT INTO pedido (id_usuario, id_estado, fecha_pedido, total)
-       VALUES ($2, $3, $4, $5)`,
+       VALUES (?, ?, ?, ?)`,
       [
         pedido.id_usuario,
         pedido.id_estado,
@@ -54,7 +57,7 @@ async function insertar(pedido) {
       ]
     );
 
-    const id_pedido = result.insertId;
+    const id_pedido = rows.insertId;
 
     if (pedido.detalles && pedido.detalles.length > 0) {
       for (const detalle of pedido.detalles) {
@@ -69,7 +72,7 @@ async function insertar(pedido) {
 
         await connection.execute(
           `INSERT INTO detalle_pedido (id_pedido, id_producto, cantidad, precio_unitario)
-           VALUES ($6, $7, $8, $9)`,
+           VALUES (?, ?, ?, ?)`,
           [
             id_pedido,
             detalle.id_producto,
@@ -79,7 +82,7 @@ async function insertar(pedido) {
         );
 
         const [stockUpdate] = await connection.execute(
-          `UPDATE producto SET stock = stock - $10 WHERE id_producto = $11 AND stock >= $12`,
+          `UPDATE producto SET stock = stock - ? WHERE id_producto = ? AND stock >= ?`,
           [cantidad, detalle.id_producto, cantidad]
         );
 
@@ -95,7 +98,7 @@ async function insertar(pedido) {
     if (pedido.metodo_pago) {
       const [pagoResult] = await connection.execute(
         `INSERT INTO pago (id_pedido, metodo_pago, monto, fecha_pago)
-         VALUES ($13, $14, $15, $16)`,
+         VALUES (?, ?, ?, ?)`,
         [id_pedido, pedido.metodo_pago, pedido.total || 0, new Date()]
       );
       id_pago = pagoResult.insertId;
@@ -117,7 +120,7 @@ async function insertar(pedido) {
 }
 
 async function buscarPorId(id) {
-  const {rows} = await pool.query(`
+  const [rows] = await db.execute(`
     SELECT 
       p.id_pedido,
       p.id_usuario,
@@ -125,14 +128,31 @@ async function buscarPorId(id) {
       p.fecha_pedido,
       p.total,
       u.nombre AS usuario,
+      u.nombre AS nombre_cliente,
+      u.email AS email_cliente,
       e.nombre_estado AS estado
     FROM pedido p
     JOIN usuario u ON p.id_usuario = u.id_usuario
     JOIN estado_pedido e ON p.id_estado = e.id_estado
-    WHERE p.id_pedido = $17
+    WHERE p.id_pedido = ?
   `, [id]);
 
-  return rows[0];
+  if (!rows[0]) return null;
+
+  const [detalles] = await db.execute(`
+    SELECT
+      dp.id_detalle,
+      dp.id_producto,
+      dp.cantidad,
+      dp.precio_unitario,
+      pr.nombre AS nombre_producto,
+      pr.imagen
+    FROM detalle_pedido dp
+    JOIN producto pr ON dp.id_producto = pr.id_producto
+    WHERE dp.id_pedido = ?
+  `, [id]);
+
+  return { ...rows[0], detalles };
 }
 
 
@@ -154,7 +174,7 @@ async function actualizar(id, pedido) {
       err.status = 400;
       throw err;
     }
-    updates.push('id_usuario = $18');
+    updates.push('id_usuario = ?');
     values.push(idUsuario);
   }
 
@@ -165,7 +185,7 @@ async function actualizar(id, pedido) {
       err.status = 400;
       throw err;
     }
-    updates.push('id_estado = $19');
+    updates.push('id_estado = ?');
     values.push(idEstado);
   }
 
@@ -176,7 +196,7 @@ async function actualizar(id, pedido) {
       err.status = 400;
       throw err;
     }
-    updates.push('total = $20');
+    updates.push('total = ?');
     values.push(total);
   }
 
@@ -187,7 +207,7 @@ async function actualizar(id, pedido) {
       err.status = 400;
       throw err;
     }
-    updates.push('fecha_pedido = $21');
+    updates.push('fecha_pedido = ?');
     values.push(fecha);
   }
 
@@ -196,11 +216,11 @@ async function actualizar(id, pedido) {
   }
 
   values.push(idPedido);
-  const {rows} = await pool.query(
-    `UPDATE pedido SET ${updates.join(', ')} WHERE id_pedido = $22`,
+  const [rows] = await db.execute(
+    `UPDATE pedido SET ${updates.join(', ')} WHERE id_pedido = ?`,
     values
   );
-  return result.affectedRows;
+  return rows.affectedRows;
 }
 
 async function eliminar(id) {
@@ -216,7 +236,7 @@ async function eliminar(id) {
     await connection.beginTransaction();
 
     const [detalles] = await connection.execute(
-      `SELECT id_producto, cantidad FROM detalle_pedido WHERE id_pedido = $23`,
+      `SELECT id_producto, cantidad FROM detalle_pedido WHERE id_pedido = ?`,
       [idPedido]
     );
 
@@ -226,19 +246,19 @@ async function eliminar(id) {
         const idProducto = Number(d.id_producto) || 0;
         if (cantidad > 0 && idProducto > 0) {
           await connection.execute(
-            `UPDATE producto SET stock = stock + $24 WHERE id_producto = $25`,
+            `UPDATE producto SET stock = stock + ? WHERE id_producto = ?`,
             [cantidad, idProducto]
           );
         }
       }
     }
 
-    await connection.execute(`DELETE FROM pago WHERE id_pedido = $26`, [idPedido]);
-    await connection.execute(`DELETE FROM detalle_pedido WHERE id_pedido = $27`, [idPedido]);
-    const {rows} = await connection.execute(`DELETE FROM pedido WHERE id_pedido = $28`, [idPedido]);
+    await connection.execute(`DELETE FROM pago WHERE id_pedido = ?`, [idPedido]);
+    await connection.execute(`DELETE FROM detalle_pedido WHERE id_pedido = ?`, [idPedido]);
+    const [rows] = await connection.execute(`DELETE FROM pedido WHERE id_pedido = ?`, [idPedido]);
 
     await connection.commit();
-    return result.affectedRows;
+    return rows.affectedRows;
   } catch (error) {
     await connection.rollback();
     throw error;
@@ -250,7 +270,7 @@ async function eliminar(id) {
 async function obtenerResumenReportes(top = 5) {
   const topLimit = Math.max(1, Math.min(Number(top) || 5, 20));
 
-  const [[totales]] = await pool.query(
+  const [[totales]] = await db.execute(
     `
     SELECT
       COUNT(*) AS total_pedidos,
@@ -260,7 +280,7 @@ async function obtenerResumenReportes(top = 5) {
     `
   );
 
-  const [porEstado] = await pool.query(
+  const [porEstado] = await db.execute(
     `
     SELECT
       e.id_estado,
@@ -274,7 +294,7 @@ async function obtenerResumenReportes(top = 5) {
     `
   );
 
-  const [topProductos] = await pool.query(
+  const [topProductos] = await db.execute(
     `
     SELECT
       pr.id_producto,
@@ -289,7 +309,7 @@ async function obtenerResumenReportes(top = 5) {
     `
   );
 
-  const [ventasMensualesRaw] = await pool.query(
+  const [ventasMensualesRaw] = await db.execute(
     `
     SELECT
       DATE_FORMAT(p.fecha_pedido, '%Y-%m') AS periodo,
@@ -312,9 +332,51 @@ async function obtenerResumenReportes(top = 5) {
   };
 }
 
+async function listarParaRepartidor() {
+  const [rows] = await db.execute(`
+    SELECT 
+      p.id_pedido,
+      p.id_usuario,
+      p.id_estado,
+      p.fecha_pedido,
+      p.total,
+      u.nombre AS nombre_cliente,
+      u.email AS email_cliente,
+      e.nombre_estado AS estado
+    FROM pedido p
+    JOIN usuario u ON p.id_usuario = u.id_usuario
+    JOIN estado_pedido e ON p.id_estado = e.id_estado
+    WHERE p.id_estado IN (2, 3, 4)
+    ORDER BY p.fecha_pedido ASC
+  `);
+  return rows;
+}
+
+async function listarPorUsuarioCompleto(idUsuario) {
+  const [rows] = await db.execute(`
+    SELECT 
+      p.id_pedido,
+      p.id_usuario,
+      p.id_estado,
+      p.fecha_pedido,
+      p.total,
+      e.nombre_estado AS estado,
+      COUNT(dp.id_detalle) AS num_productos
+    FROM pedido p
+    JOIN estado_pedido e ON p.id_estado = e.id_estado
+    LEFT JOIN detalle_pedido dp ON dp.id_pedido = p.id_pedido
+    WHERE p.id_usuario = ?
+    GROUP BY p.id_pedido
+    ORDER BY p.fecha_pedido DESC
+  `, [idUsuario]);
+  return rows;
+}
+
 module.exports = {
   listar,
   listarPorUsuario,
+  listarPorUsuarioCompleto,
+  listarParaRepartidor,
   insertar,
   buscarPorId,
   actualizar,

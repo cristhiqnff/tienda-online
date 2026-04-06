@@ -1,8 +1,9 @@
-const pool = require("../db.js");
+const db = require("../db.js");
 
 async function crearSolicitud(payload) {
   const {
     id_usuario,
+    tipo = 'VENDEDOR',
     nombre_tienda,
     telefono,
     ciudad,
@@ -13,43 +14,55 @@ async function crearSolicitud(payload) {
     doc_representante
   } = payload;
 
-  const {rows} = await pool.query(
+  // Para REPARTIDOR, campos de tienda son opcionales
+  const esRepartidor = tipo === 'REPARTIDOR';
+
+  const [rows] = await db.execute(
     `INSERT INTO vendedor_solicitud
-      (id_usuario, nombre_tienda, telefono, ciudad, descripcion, nit_rut, direccion_fiscal, nombre_legal, doc_representante, estado)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'PENDIENTE')`,
+      (id_usuario, tipo, nombre_tienda, telefono, ciudad, descripcion, nit_rut, direccion_fiscal, nombre_legal, doc_representante, estado)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDIENTE')`,
     [
       id_usuario,
-      nombre_tienda,
+      tipo,
+      nombre_tienda || (esRepartidor ? 'N/A' : null),
       telefono,
       ciudad,
       descripcion || null,
-      nit_rut,
-      direccion_fiscal,
-      nombre_legal,
-      doc_representante
+      nit_rut || (esRepartidor ? 'N/A' : null),
+      direccion_fiscal || (esRepartidor ? 'N/A' : null),
+      nombre_legal || (esRepartidor ? 'N/A' : null),
+      doc_representante || (esRepartidor ? 'N/A' : null)
     ]
   );
 
-  return result.insertId;
+  return rows.insertId;
 }
 
 async function obtenerSolicitudPorUsuario(idUsuario) {
-  const {rows} = await pool.query(
-    `SELECT * FROM vendedor_solicitud WHERE id_usuario = $10 ORDER BY fecha_creacion DESC LIMIT 1`,
+  const [rows] = await db.execute(
+    `SELECT * FROM vendedor_solicitud WHERE id_usuario = ? ORDER BY fecha_creacion DESC LIMIT 1`,
     [idUsuario]
   );
   return rows[0];
+}
+
+async function obtenerSolicitudesPorUsuario(idUsuario) {
+  const [rows] = await db.execute(
+    `SELECT * FROM vendedor_solicitud WHERE id_usuario = ? ORDER BY fecha_creacion DESC`,
+    [idUsuario]
+  );
+  return rows;
 }
 
 async function listarSolicitudes(estado = null) {
   const params = [];
   let where = '';
   if (estado) {
-    where = 'WHERE vs.estado = $11';
+    where = 'WHERE vs.estado = ?';
     params.push(estado);
   }
 
-  const {rows} = await pool.query(
+  const [rows] = await db.execute(
     `SELECT vs.*, u.nombre AS usuario_nombre, u.email AS usuario_email
      FROM vendedor_solicitud vs
      JOIN usuario u ON u.id_usuario = vs.id_usuario
@@ -61,23 +74,24 @@ async function listarSolicitudes(estado = null) {
 }
 
 async function actualizarEstado(idSolicitud, estado, comentario_admin = null) {
-  const {rows} = await pool.query(
+  const [rows] = await db.execute(
     `UPDATE vendedor_solicitud
-     SET estado = $12, comentario_admin = $13, fecha_resolucion = CURRENT_TIMESTAMP
-     WHERE id_solicitud = $14`,
+     SET estado = ?, comentario_admin = ?, fecha_resolucion = NOW()
+     WHERE id_solicitud = ?`,
     [estado, comentario_admin, idSolicitud]
   );
-  return rowCount;
+  return rows.affectedRows;
 }
 
 async function obtenerPorId(idSolicitud) {
-  const {rows} = await pool.query('SELECT * FROM vendedor_solicitud WHERE id_solicitud = $15', [idSolicitud]);
+  const [rows] = await db.execute('SELECT * FROM vendedor_solicitud WHERE id_solicitud = ?', [idSolicitud]);
   return rows[0];
 }
 
 module.exports = {
   crearSolicitud,
   obtenerSolicitudPorUsuario,
+  obtenerSolicitudesPorUsuario,
   listarSolicitudes,
   actualizarEstado,
   obtenerPorId

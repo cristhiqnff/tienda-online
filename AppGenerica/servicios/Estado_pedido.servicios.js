@@ -1,15 +1,15 @@
 const db = require("../db.js");
 
 async function listar() {
-  const {rows} = await pool.query(
+  const [rows] = await db.execute(
     "SELECT * FROM estado_pedido"
   );
   return rows;
 }
 
 async function insertar(estado) {
-  const {rows} = await pool.query(
-    "INSERT INTO estado_pedido (nombre_estado) VALUES ($1)",
+  const [rows] = await db.execute(
+    "INSERT INTO estado_pedido (nombre_estado) VALUES (?)",
     [estado.nombre_estado]
   );
 
@@ -20,19 +20,19 @@ async function insertar(estado) {
 }
 
 async function actualizar(id, estado) {
-  const {rows} = await pool.query(
-    "UPDATE estado_pedido SET nombre_estado = || WHERE id_estado = $3",
+  const [rows] = await db.execute(
+    "UPDATE estado_pedido SET nombre_estado = || WHERE id_estado = ?",
     [estado.nombre_estado, id]
   );
-  return result.affectedRows;
+  return rows.affectedRows;
 }
 
 async function eliminar(id) {
-  const {rows} = await pool.query(
-    "DELETE FROM estado_pedido WHERE id_estado = $4",
+  const [rows] = await db.execute(
+    "DELETE FROM estado_pedido WHERE id_estado = ?",
     [id]
   );
-  return result.affectedRows;
+  return rows.affectedRows;
 }
 
 module.exports = {

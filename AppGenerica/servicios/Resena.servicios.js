@@ -1,7 +1,7 @@
-const pool = require("../db.js");
+const db = require("../db.js");
 
 async function listarPorProducto(idProducto) {
-  const {rows} = await pool.query(
+  const [rows] = await db.execute(
     `
     SELECT
       r.id_resena,
@@ -13,7 +13,7 @@ async function listarPorProducto(idProducto) {
       u.nombre AS usuario
     FROM resena r
     JOIN usuario u ON u.id_usuario = r.id_usuario
-    WHERE r.id_producto = $1
+    WHERE r.id_producto = ?
     ORDER BY r.fecha DESC, r.id_resena DESC
     `,
     [idProducto]
@@ -32,20 +32,20 @@ async function insertar({ id_producto, id_usuario, rating, comentario }) {
     throw new Error("El comentario es obligatorio");
   }
 
-  const {rows} = await pool.query(
+  const [rows] = await db.execute(
     `INSERT INTO resena (id_producto, id_usuario, calificacion, comentario)
-     VALUES ($1, $2, $3, $4) RETURNING id_resena`,
+     VALUES (?, ?, ?, ?)`,
     [id_producto, id_usuario, calificacion, texto]
   );
 
   return {
     message: "Reseña registrada correctamente",
-    insertId: rows[0].id_resena
+    insertId: rows.insertId
   };
 }
 
 async function ratingPorVendedor() {
-  const {rows} = await pool.query(`
+  const [rows] = await db.execute(`
     SELECT
       v.id_usuario AS id_vendedor,
       v.nombre AS vendedor_nombre,
@@ -65,7 +65,7 @@ async function ratingPorVendedor() {
 }
 
 async function resenasPorVendedor(idVendedor) {
-  const {rows} = await pool.query(`
+  const [rows] = await db.execute(`
     SELECT
       r.id_resena, r.rating, r.comentario, r.fecha,
       u.nombre AS usuario,
@@ -73,7 +73,7 @@ async function resenasPorVendedor(idVendedor) {
     FROM resena r
     JOIN usuario u ON u.id_usuario = r.id_usuario
     JOIN producto p ON p.id_producto = r.id_producto
-    WHERE p.id_vendedor = $8
+    WHERE p.id_vendedor = ?
     ORDER BY r.fecha DESC
     LIMIT 20
   `, [idVendedor]);

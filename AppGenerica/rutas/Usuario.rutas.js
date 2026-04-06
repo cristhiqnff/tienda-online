@@ -17,6 +17,7 @@ router.post('/registro', authRateLimiter, ctrl.registrar);
 // Rutas protegidas
 router.get('/', verificarToken, requiereRol(['ADMIN', 'SUPER_ADMIN', 'VENDEDOR']), ctrl.listarUsuarios);
 router.get('/perfil', verificarToken, ctrl.obtenerPerfil);
+router.get('/menu', verificarToken, ctrl.obtenerMenu);
 router.post('/', verificarToken, requiereRol(['ADMIN', 'SUPER_ADMIN']), ctrl.crearUsuario);
 router.get('/:id', verificarToken, requiereRol(['ADMIN', 'SUPER_ADMIN']), ctrl.buscarUsuarioPorId);
 router.put('/:id', verificarToken, requiereRol(['ADMIN', 'SUPER_ADMIN']), ctrl.actualizarUsuario);

@@ -29,6 +29,7 @@ async function verificarToken(req, res, next) {
     req.usuario = {
       id_usuario: idUsuario,
       id: idUsuario,
+      email: payload.email || null,
       roles,
       rol: roles[0] // compatibilidad hacia atrás
     };

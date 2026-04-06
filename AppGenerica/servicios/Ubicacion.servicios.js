@@ -1,4 +1,4 @@
-const pool = require("../db.js");
+const db = require("../db.js");
 
 function mapearErrorTablaNoExiste(error) {
   if (!error) return error;
@@ -12,7 +12,7 @@ function mapearErrorTablaNoExiste(error) {
 
 async function listarDepartamentos() {
   try {
-    const {rows} = await pool.query(`
+    const [rows] = await db.execute(`
       SELECT codigo_dane, nombre
       FROM departamento
       ORDER BY nombre ASC
@@ -32,11 +32,11 @@ async function listarCiudadesPorDepartamento(codigoDepartamento) {
   }
 
   try {
-    const {rows} = await pool.query(
+    const [rows] = await db.execute(
       `
       SELECT codigo_dane, nombre, codigo_dane_departamento
       FROM ciudad
-      WHERE codigo_dane_departamento = $1
+      WHERE codigo_dane_departamento = ?
       ORDER BY nombre ASC
       `,
       [dep]

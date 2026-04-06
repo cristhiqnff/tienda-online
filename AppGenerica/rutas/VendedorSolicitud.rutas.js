@@ -7,7 +7,7 @@ const { verificarToken, requiereRol } = require('../middlewares/auth');
 router.post('/', verificarToken, requiereRol(['CLIENTE']), ctrl.crearSolicitud);
 
 // Cliente consulta su solicitud
-router.get('/mia', verificarToken, requiereRol(['CLIENTE', 'VENDEDOR', 'ADMIN']), ctrl.miSolicitud);
+router.get('/mia', verificarToken, requiereRol(['CLIENTE', 'VENDEDOR', 'REPARTIDOR', 'ADMIN', 'SUPER_ADMIN']), ctrl.miSolicitud);
 
 // Admin lista solicitudes
 router.get('/', verificarToken, requiereRol(['ADMIN']), ctrl.listar);
